@@ -33,8 +33,16 @@ struct WeatherManager {
                 }
                 
                 if let safeData = data {
-                    if let weather = self.parseJSON(safeData) {
-                        self.delegate?.didUpdateWeather(self, weather: weather)
+                    do {
+                        let weatherData = try JSONDecoder().decode(WeatherData.self, from: safeData)
+                        
+//                      SOLID: Separar responsabilidades, a função perform request não deveria fazer tratamento do objeto
+                        let weatherModel = WeatherModel(conditionId: weatherData.weather[0].id,
+                                                        cityName: weatherData.name,
+                                                        temperature: weatherData.main.temp)
+                        self.delegate?.didUpdateWeather(self, weather: weatherModel)
+                    } catch {
+                        delegate?.didFailWithError(error: error)
                     }
                 }
             }
@@ -43,20 +51,20 @@ struct WeatherManager {
         }
     }
     
-    func parseJSON(_ weatherData: Data) -> WeatherModel? {
-        let decoder = JSONDecoder()
-        
-        do {
-            let decodedData = try decoder.decode(WeatherData.self, from: weatherData)
-            let id = decodedData.weather[0].id
-            let temp = decodedData.main.temp
-            let name = decodedData.name
-            
-            let weather = WeatherModel(conditionId: id, cityName: name, temperature: temp)
-            return weather
-        } catch {
-            delegate?.didFailWithError(error: error)
-            return nil
-        }
-    }
+//    func parseJSON(_ weatherData: Data) -> WeatherModel? {
+//        let decoder = JSONDecoder()
+//
+//        do {
+//            let decodedData = try decoder.decode(WeatherData.self, from: weatherData)
+//            let id = decodedData.weather[0].id
+//            let temp = decodedData.main.temp
+//            let name = decodedData.name
+//
+//            let weather = WeatherModel(conditionId: id, cityName: name, temperature: temp)
+//            return weather
+//        } catch {
+//            delegate?.didFailWithError(error: error)
+//            return nil
+//        }
+//    }
 }
